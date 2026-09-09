@@ -26,3 +26,28 @@ stages:
     outs:
       - ./data/processed/train.csv
       - ./data/processed/test.csv
+  train:
+    cmd: python ./src/model/train.py
+    deps:
+      - ./src/model/train.py
+      - ./data/processed/train.csv
+    outs:
+      - ./models/encoder.joblib
+      - ./models/model.joblib
+
+  evaluate:
+    cmd: python ./src/model/evaluate.py
+    deps:
+      - ./src/model/evaluate.py
+      - ./models/encoder.joblib
+      - ./models/model.joblib
+      - ./data/processed/test.csv
+      - ./data/processed/train.csv
+    outs:
+      - ./run_information.json
+
+  register_model:
+    cmd: python ./src/model/register_model.py
+    deps:
+      - ./src/model/register_model.py
+      - ./run_information.json
