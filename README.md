@@ -1,61 +1,19 @@
-# Uber-Demand-Prediction
+# Uber Demand Prediction
 
-<a target="_blank" href="https://cookiecutter-data-science.drivendata.org/">
-    <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
-</a>
+## Overview
+This project uses the NYC Uber ride dataset provided by the Taxi & Limousine Commission. The open‑source data includes trips from **January 2015**, **January–March 2016**, and additional months.
 
-This project help to the rider to go high demand area. Which mantain demand and supply in same time and reduced waiting time.
+## Tasks
+1. **Clustering Pickup Locations**
+	- Group pickup points into regions (clusters) such that the average distance between two points in a cluster is **1–1.5 miles**. This enables drivers to reach the nearest region within 15 minutes.
+2. **Demand Forecasting**
+	- Predict the demand for upcoming time intervals.
 
-## Project Organization
+## Approach for Task 1
+- Load raw data and clean it (remove outliers and missing values).
+- The dataset contains ~10 M records; we use **Dask** instead of pandas for scalable processing.
+- Perform mini‑batch **K‑means** clustering on the pickup coordinates and timestamps.
+- After experimentation, **30 clusters** provide a good trade‑off between granularity and travel distance.
 
-```
-├── LICENSE            <- Open-source license if one is chosen
-├── Makefile           <- Makefile with convenience commands like `make data` or `make train`
-├── README.md          <- The top-level README for developers using this project.
-├── data
-│   ├── external       <- Data from third party sources.
-│   ├── interim        <- Intermediate data that has been transformed.
-│   ├── processed      <- The final, canonical data sets for modeling.
-│   └── raw            <- The original, immutable data dump.
-│
-├── docs               <- A default mkdocs project; see www.mkdocs.org for details
-│
-├── models             <- Trained and serialized models, model predictions, or model summaries
-│
-├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-│                         the creator's initials, and a short `-` delimited description, e.g.
-│                         `1.0-jqp-initial-data-exploration`.
-│
-├── pyproject.toml     <- Project configuration file with package metadata for 
-│                         uber_demand_prediction and configuration for tools like black
-│
-├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-│
-├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-│   └── figures        <- Generated graphics and figures to be used in reporting
-│
-├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-│                         generated with `pip freeze > requirements.txt`
-│
-├── setup.cfg          <- Configuration file for flake8
-│
-└── uber_demand_prediction   <- Source code for use in this project.
-    │
-    ├── __init__.py             <- Makes uber_demand_prediction a Python module
-    │
-    ├── config.py               <- Store useful variables and configuration
-    │
-    ├── dataset.py              <- Scripts to download or generate data
-    │
-    ├── features.py             <- Code to create features for modeling
-    │
-    ├── modeling                
-    │   ├── __init__.py 
-    │   ├── predict.py          <- Code to run model inference with trained models          
-    │   └── train.py            <- Code to train models
-    │
-    └── plots.py                <- Code to create visualizations
-```
-
---------
-
+## Future Work (Task 2)
+- Implement time‑series models to forecast demand for the next time interval.
