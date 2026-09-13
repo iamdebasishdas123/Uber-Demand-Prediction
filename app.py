@@ -18,30 +18,33 @@ dagshub.init(repo_owner='iamdebasishdas123', repo_name='Uber-Demand-Prediction',
 # set the mlflow tracking uri
 mlflow.set_tracking_uri("https://dagshub.com/iamdebasishdas123/Uber-Demand-Prediction.mlflow")
 
-# get model name
-registered_model_name = 'uber_demand_prediction_model'
-stage = "Production"
-model_path = f"models:/{registered_model_name}/{stage}"
-
-# load the latest model from model registry
-model = mlflow.sklearn.load_model(model_path)
-
 # set the root path
 root_path = Path(__file__).parent
-# path of the data
-plot_data_path = root_path / "data/external/plot_data.csv"
-data_path = root_path / "data/processed/test.csv"
+
+# get model name
+registered_model_name = 'uber_demand_prediction_model'
+stage = "Staging"
+model_uri = f"models:/{registered_model_name}/{stage}"
 
 # model paths
 kmeans_path = root_path / "models/mb_kmeans.joblib"
 scaler_path = root_path / "models/scaler.joblib"
 encoder_path = root_path / "models/encoder.joblib"
-model_path = root_path / "models/model.joblib"
+local_model_path = root_path / "models/model.joblib"
+
+# path of the data
+plot_data_path = root_path / "data/external/sampled_600_points.csv"
+data_path = root_path / "data/processed/test.csv"
+
+# load the latest model from model registry or fall back to the local serialized model
+try:
+    model = mlflow.sklearn.load_model(model_uri)
+except Exception:
+    model = joblib.load(local_model_path)
 
 # load the objects
 scaler = joblib.load(scaler_path)
 encoder = joblib.load(encoder_path)
-model = joblib.load(model_path)
 kmeans = joblib.load(kmeans_path)
 
 # dataset to plot
@@ -87,7 +90,7 @@ if date and time:
        
        # sample a latitude longitude value
        st.subheader("Location")
-       sample_loc = df_plot.sample(1).reset_index(drop=True)
+       sample_loc = df_plot[["pickup_longitude", "pickup_latitude", "region"]].sample(1).reset_index(drop=True)
        lat = sample_loc["pickup_latitude"].item()
        long = sample_loc["pickup_longitude"].item()
        region = sample_loc["region"].item()
@@ -99,8 +102,8 @@ if date and time:
               sleep(3)
               
        st.write("Region ID: ", region)
-       # scale the data
-       scaled_cord = scaler.transform(sample_loc.iloc[:, 0:2])
+       # scale the data using the exact feature order used during training
+       scaled_cord = scaler.transform(sample_loc[["pickup_longitude", "pickup_latitude"]])
        
        # plot the map
        st.subheader("MAP")
@@ -113,8 +116,8 @@ if date and time:
               "#FF00FF", "#FF1493", "#C71585", "#FF4500", "#FF6347", 
               "#FFA07A", "#FFDAB9", "#FFE4B5", "#F5DEB3", "#EEE8AA"]
 
-       # add color to the data
-       region_colors = {region: colors[i] for i, region in enumerate(df_plot["region"].unique().tolist())}
+       # color every sampled point by its assigned cluster/region
+       region_colors = {region: colors[i] for i, region in enumerate(sorted(df_plot["region"].unique().tolist()))}
        df_plot["color"] = df_plot["region"].map(region_colors)
        
        # make prediction pipeline
@@ -132,7 +135,7 @@ if date and time:
                      sleep(0.05)
                      progress_bar.progress(percent_complete + 1, text="Operation in progress. Please wait.")
               
-              # map
+              # map of all sampled points in each cluster, colored by region
               st.map(data=df_plot, latitude="pickup_latitude", 
                      longitude="pickup_longitude", size=0.01,
                      color="color")
@@ -172,7 +175,7 @@ if date and time:
               sorted_distances = sorted(distances, key=lambda x: x[1])[0:9]
               indexes = sorted([ind[0] for ind in sorted_distances])
               
-              # filter plot data on regions
+              # filter sampled points on the selected neighborhood regions
               df_plot_filtered = df_plot[df_plot["region"].isin(indexes)]
               
               # progress bar
@@ -181,7 +184,7 @@ if date and time:
                      sleep(0.05)
                      progress_bar.progress(percent_complete + 1, text="Operation in progress. Please wait.")
               
-              # map
+              # map of all sampled points in the chosen regions, colored by region
               st.map(data=df_plot_filtered, latitude="pickup_latitude", 
                      longitude="pickup_longitude", size=0.01,
                      color="color")
